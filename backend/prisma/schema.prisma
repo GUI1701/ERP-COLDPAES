@@ -37,6 +37,7 @@ model Item {
   saldoAtual    Decimal            @default(0)
   estoqueMinimo Decimal
   estoqueIdeal  Decimal
+  ultimoCusto   Decimal?
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
   movimentos    MovimentoEstoque[]
@@ -73,6 +74,8 @@ model Lancamento {
 model Venda {
   id          String       @id @default(cuid())
   cliente     String?
+  data        DateTime     @default(now())
+  observacao  String?
   total       Decimal
   createdAt   DateTime     @default(now())
   itens       ItemVenda[]
@@ -92,6 +95,8 @@ model ItemVenda {
 model Compra {
   id          String       @id @default(cuid())
   fornecedor  String?
+  data        DateTime     @default(now())
+  observacao  String?
   total       Decimal
   createdAt   DateTime     @default(now())
   itens       ItemCompra[]
