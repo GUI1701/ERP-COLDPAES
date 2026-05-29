@@ -14,6 +14,7 @@ export default createRouter({
         { path: 'vendas', component: () => import('../views/VendasView.vue') },
         { path: 'compras', component: () => import('../views/ComprasView.vue') },
         { path: 'estoque', component: () => import('../views/EstoqueView.vue') },
+        { path: 'relatorios', component: () => import('../views/RelatoriosView.vue') },
         { path: 'dre', component: () => import('../views/DREView.vue') },
         { path: 'balanco', component: () => import('../views/BalancoView.vue') },
         { path: 'configuracoes', component: () => import('../views/ConfiguracoesView.vue') },
