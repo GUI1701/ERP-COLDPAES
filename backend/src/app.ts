@@ -6,6 +6,8 @@ import { comprasRoutes } from './modules/compras/compras.routes'
 import { vendasRoutes } from './modules/vendas/vendas.routes'
 import { dashboardRoutes } from './modules/dashboard/dashboard.routes'
 import { relatoriosRoutes } from './modules/relatorios/relatorios.routes'
+import { clientesRoutes } from './modules/clientes/clientes.routes'
+import { fornecedoresRoutes } from './modules/fornecedores/fornecedores.routes'
 
 export function buildApp() {
   const app = Fastify({ logger: true })
@@ -17,6 +19,8 @@ export function buildApp() {
   app.register(vendasRoutes)
   app.register(dashboardRoutes)
   app.register(relatoriosRoutes)
+  app.register(clientesRoutes)
+  app.register(fornecedoresRoutes)
 
   app.get('/health', async () => ({ status: 'ok' }))
 

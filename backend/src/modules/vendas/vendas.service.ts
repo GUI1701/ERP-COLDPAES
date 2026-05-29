@@ -49,6 +49,7 @@ export async function getResumoVendas() {
 
 export async function criarVenda(input: {
   cliente?: string
+  clienteId?: string
   data: Date
   dataVencimento: Date
   observacao?: string
@@ -63,8 +64,15 @@ export async function criarVenda(input: {
 
     const total = calcularTotal(input.itens)
 
+    // Auto-fill cliente texto a partir da entidade, se fornecido
+    let clienteTexto = input.cliente
+    if (input.clienteId && !clienteTexto) {
+      const ent = await tx.cliente.findUnique({ where: { id: input.clienteId }, select: { nome: true } })
+      if (ent) clienteTexto = ent.nome
+    }
+
     const venda = await tx.venda.create({
-      data: { cliente: input.cliente, data: input.data, observacao: input.observacao, total },
+      data: { cliente: clienteTexto, clienteId: input.clienteId, data: input.data, observacao: input.observacao, total },
     })
 
     for (const item of input.itens) {
@@ -82,7 +90,7 @@ export async function criarVenda(input: {
 
     await tx.lancamento.create({
       data: {
-        descricao: input.cliente ? `Venda - ${input.cliente}` : 'Venda',
+        descricao: clienteTexto ? `Venda - ${clienteTexto}` : 'Venda',
         tipo: 'RECEITA',
         status: 'PREVISTO',
         valor: total,

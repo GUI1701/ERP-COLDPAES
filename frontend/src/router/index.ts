@@ -17,6 +17,8 @@ export default createRouter({
         { path: 'relatorios', component: () => import('../views/RelatoriosView.vue') },
         { path: 'dre', component: () => import('../views/DREView.vue') },
         { path: 'balanco', component: () => import('../views/BalancoView.vue') },
+        { path: 'clientes', component: () => import('../views/ClientesView.vue') },
+        { path: 'fornecedores', component: () => import('../views/FornecedoresView.vue') },
         { path: 'configuracoes', component: () => import('../views/ConfiguracoesView.vue') },
       ],
     },

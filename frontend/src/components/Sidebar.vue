@@ -25,6 +25,8 @@ const menu = [
   { path: '/vendas', label: 'Vendas' },
   { path: '/compras', label: 'Compras' },
   { path: '/estoque', label: 'Estoque' },
+  { path: '/clientes', label: 'Clientes' },
+  { path: '/fornecedores', label: 'Fornecedores' },
   { path: '/relatorios', label: 'Relatórios' },
   { path: '/dre', label: 'DRE' },
   { path: '/balanco', label: 'Balanço Patrimonial' },

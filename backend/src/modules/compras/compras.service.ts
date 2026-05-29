@@ -47,6 +47,7 @@ export async function getResumoCompras() {
 
 export async function criarCompra(input: {
   fornecedor?: string
+  fornecedorId?: string
   data: Date
   dataVencimento: Date
   observacao?: string
@@ -55,8 +56,15 @@ export async function criarCompra(input: {
   const total = calcularTotal(input.itens)
 
   return prisma.$transaction(async (tx) => {
+    // Auto-fill fornecedor texto a partir da entidade, se fornecido
+    let fornecedorTexto = input.fornecedor
+    if (input.fornecedorId && !fornecedorTexto) {
+      const ent = await tx.fornecedor.findUnique({ where: { id: input.fornecedorId }, select: { nome: true } })
+      if (ent) fornecedorTexto = ent.nome
+    }
+
     const compra = await tx.compra.create({
-      data: { fornecedor: input.fornecedor, data: input.data, observacao: input.observacao, total },
+      data: { fornecedor: fornecedorTexto, fornecedorId: input.fornecedorId, data: input.data, observacao: input.observacao, total },
     })
 
     for (const item of input.itens) {
@@ -74,7 +82,7 @@ export async function criarCompra(input: {
 
     await tx.lancamento.create({
       data: {
-        descricao: input.fornecedor ? `Compra - ${input.fornecedor}` : 'Compra',
+        descricao: fornecedorTexto ? `Compra - ${fornecedorTexto}` : 'Compra',
         tipo: 'DESPESA',
         status: 'PREVISTO',
         valor: total,
