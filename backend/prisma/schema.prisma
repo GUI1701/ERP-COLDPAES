@@ -15,6 +15,7 @@ enum TipoItem {
 enum TipoMovimento {
   ENTRADA
   SAIDA
+  AJUSTE
 }
 
 enum TipoLancamento {
