@@ -1,0 +1,113 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TipoItem {
+  PRODUTO
+  INSUMO
+}
+
+enum TipoMovimento {
+  ENTRADA
+  SAIDA
+}
+
+enum TipoLancamento {
+  RECEITA
+  DESPESA
+}
+
+enum StatusLancamento {
+  PREVISTO
+  REALIZADO
+}
+
+model Item {
+  id            String             @id @default(cuid())
+  nome          String
+  tipo          TipoItem
+  unidade       String
+  saldoAtual    Decimal            @default(0)
+  estoqueMinimo Decimal
+  estoqueIdeal  Decimal
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  movimentos    MovimentoEstoque[]
+  itensVenda    ItemVenda[]
+  itensCompra   ItemCompra[]
+}
+
+model MovimentoEstoque {
+  id         String        @id @default(cuid())
+  itemId     String
+  tipo       TipoMovimento
+  quantidade Decimal
+  motivo     String?
+  createdAt  DateTime      @default(now())
+  item       Item          @relation(fields: [itemId], references: [id])
+}
+
+model Lancamento {
+  id             String           @id @default(cuid())
+  descricao      String
+  tipo           TipoLancamento
+  status         StatusLancamento
+  valor          Decimal
+  dataVencimento DateTime
+  dataEfetivacao DateTime?
+  vendaId        String?
+  compraId       String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  venda          Venda?           @relation(fields: [vendaId], references: [id])
+  compra         Compra?          @relation(fields: [compraId], references: [id])
+}
+
+model Venda {
+  id          String       @id @default(cuid())
+  cliente     String?
+  total       Decimal
+  createdAt   DateTime     @default(now())
+  itens       ItemVenda[]
+  lancamentos Lancamento[]
+}
+
+model ItemVenda {
+  id         String  @id @default(cuid())
+  vendaId    String
+  itemId     String
+  quantidade Decimal
+  valorUnit  Decimal
+  venda      Venda   @relation(fields: [vendaId], references: [id])
+  item       Item    @relation(fields: [itemId], references: [id])
+}
+
+model Compra {
+  id          String       @id @default(cuid())
+  fornecedor  String?
+  total       Decimal
+  createdAt   DateTime     @default(now())
+  itens       ItemCompra[]
+  lancamentos Lancamento[]
+}
+
+model ItemCompra {
+  id         String  @id @default(cuid())
+  compraId   String
+  itemId     String
+  quantidade Decimal
+  valorUnit  Decimal
+  compra     Compra  @relation(fields: [compraId], references: [id])
+  item       Item    @relation(fields: [itemId], references: [id])
+}
+
+model Configuracao {
+  id    String @id @default(cuid())
+  chave String @unique
+  valor String
+}
