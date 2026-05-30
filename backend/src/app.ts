@@ -13,7 +13,7 @@ import { assistenteRoutes } from './modules/assistente/assistente.routes'
 export function buildApp() {
   const app = Fastify({ logger: true })
 
-  app.register(cors, { origin: 'http://localhost:5173' })
+  app.register(cors, { origin: ['http://localhost:5173', 'http://localhost:5174'] })
   app.register(estoqueRoutes)
   app.register(financeiroRoutes)
   app.register(comprasRoutes)

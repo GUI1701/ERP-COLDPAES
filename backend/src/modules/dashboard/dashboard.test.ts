@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { consolidarDashboard } from './dashboard.service'
+import { consolidarDashboard, calcularFluxoCaixa30d, calcularVendasPorProduto, calcularEstoqueInsumos } from './dashboard.service'
 
 const resumoFin = {
   caixaAtual: 5000, caixaProjetado: 7000, entradasDia: 1000, saidasDia: 500,
@@ -85,5 +85,144 @@ describe('consolidarDashboard — compras e vendas', () => {
     expect(resultado.vendas.totalVendido).toBe(15000)
     expect(resultado.vendas.quantidadeVendas).toBe(12)
     expect(resultado.vendas.mes).toEqual({ total: 3000, quantidade: 4 })
+  })
+})
+
+// ── calcularFluxoCaixa30d ────────────────────────────────────────────────────
+
+describe('calcularFluxoCaixa30d', () => {
+  const hoje = new Date(2026, 4, 30) // 30 mai 2026
+  const lancBase = [
+    { tipo: 'RECEITA', valor: 1000, dataVencimento: new Date(2026, 4, 30) },
+    { tipo: 'DESPESA', valor: 500,  dataVencimento: new Date(2026, 4, 31) },
+    { tipo: 'RECEITA', valor: 300,  dataVencimento: new Date(2026, 5,  1) },
+  ]
+
+  it('retorna 30 dias por padrão', () => {
+    const r = calcularFluxoCaixa30d(5000, lancBase, lancBase, hoje)
+    expect(r).toHaveLength(30)
+  })
+
+  it('retorna N dias quando dias=N', () => {
+    const r = calcularFluxoCaixa30d(5000, [], [], hoje, 7)
+    expect(r).toHaveLength(7)
+  })
+
+  it('label no formato DD/MM', () => {
+    const r = calcularFluxoCaixa30d(5000, [], [], hoje)
+    expect(r[0].label).toBe('30/05')
+    expect(r[1].label).toBe('31/05')
+    expect(r[2].label).toBe('01/06')
+  })
+
+  it('entradas sempre positivas ou zero', () => {
+    const r = calcularFluxoCaixa30d(5000, lancBase, lancBase, hoje)
+    expect(r.every(d => d.entradas >= 0)).toBe(true)
+  })
+
+  it('saidas sempre negativas ou zero', () => {
+    const r = calcularFluxoCaixa30d(5000, lancBase, lancBase, hoje)
+    expect(r.every(d => d.saidas <= 0)).toBe(true)
+    expect(r[1].saidas).toBe(-500)
+  })
+
+  it('caixaProjetado acumula corretamente dia a dia', () => {
+    const r = calcularFluxoCaixa30d(5000, lancBase, lancBase, hoje)
+    expect(r[0].caixaProjetado).toBe(6000)  // 5000 + 1000
+    expect(r[1].caixaProjetado).toBe(5500)  // 6000 - 500
+    expect(r[2].caixaProjetado).toBe(5800)  // 5500 + 300
+  })
+
+  it('caixaProjetado desce com saídas consecutivas', () => {
+    const soSaidas = [
+      { tipo: 'DESPESA', valor: 1000, dataVencimento: new Date(2026, 4, 30) },
+      { tipo: 'DESPESA', valor: 1000, dataVencimento: new Date(2026, 4, 31) },
+    ]
+    const r = calcularFluxoCaixa30d(5000, soSaidas, soSaidas, hoje)
+    expect(r[0].caixaProjetado).toBe(4000)
+    expect(r[1].caixaProjetado).toBe(3000)
+  })
+
+  it('caixaProjetado sobe com entradas consecutivas', () => {
+    const soEntradas = [
+      { tipo: 'RECEITA', valor: 2000, dataVencimento: new Date(2026, 4, 30) },
+      { tipo: 'RECEITA', valor: 3000, dataVencimento: new Date(2026, 4, 31) },
+    ]
+    const r = calcularFluxoCaixa30d(5000, soEntradas, soEntradas, hoje)
+    expect(r[0].caixaProjetado).toBe(7000)
+    expect(r[1].caixaProjetado).toBe(10000)
+  })
+
+  it('dias sem lançamento mantêm caixaProjetado anterior', () => {
+    const umLanc = [{ tipo: 'RECEITA', valor: 1000, dataVencimento: new Date(2026, 4, 30) }]
+    const r = calcularFluxoCaixa30d(5000, umLanc, umLanc, hoje)
+    expect(r[0].caixaProjetado).toBe(6000)
+    expect(r[1].caixaProjetado).toBe(6000) // sem lançamento
+    expect(r[2].caixaProjetado).toBe(6000)
+  })
+
+  it('barras usam lancamentosBarra, acumulação usa lancamentosProjecao', () => {
+    const projecao = [{ tipo: 'RECEITA', valor: 1000, dataVencimento: new Date(2026, 4, 30) }]
+    const barra = [
+      { tipo: 'RECEITA', valor: 1000, dataVencimento: new Date(2026, 4, 30) },
+      { tipo: 'RECEITA', valor: 4000, dataVencimento: new Date(2026, 4, 30) }, // só na barra
+    ]
+    const r = calcularFluxoCaixa30d(10000, projecao, barra, hoje)
+    expect(r[0].entradas).toBe(5000)          // barra mostra todos (1000 + 4000)
+    expect(r[0].caixaProjetado).toBe(11000)   // acumula só projecao (10000 + 1000)
+  })
+})
+
+// ── calcularVendasPorProduto ────────────────────────────────────────────────
+
+describe('calcularVendasPorProduto', () => {
+  const itensVenda = [
+    { quantidade: 100, valorUnit: 0.5,  item: { nome: 'Pão francês', tipo: 'PRODUTO', unidade: 'un' } },
+    { quantidade: 50,  valorUnit: 0.5,  item: { nome: 'Pão francês', tipo: 'PRODUTO', unidade: 'un' } },
+    { quantidade: 30,  valorUnit: 5.0,  item: { nome: 'Croissant',   tipo: 'PRODUTO', unidade: 'un' } },
+  ]
+
+  it('agrupa quantidade por produto e ordena desc', () => {
+    const r = calcularVendasPorProduto(itensVenda)
+    const pao = r.quantidade.find(p => p.nome === 'Pão francês')
+    expect(pao?.quantidade).toBe(150)
+    expect(r.quantidade[0].nome).toBe('Pão francês')
+  })
+
+  it('agrupa valor (qtd × valorUnit) por produto', () => {
+    const r = calcularVendasPorProduto(itensVenda)
+    const pao = r.valor.find(p => p.nome === 'Pão francês')
+    expect(pao?.valor).toBeCloseTo(75)
+    const croissant = r.valor.find(p => p.nome === 'Croissant')
+    expect(croissant?.valor).toBeCloseTo(150)
+  })
+})
+
+// ── calcularEstoqueInsumos ──────────────────────────────────────────────────
+
+describe('calcularEstoqueInsumos', () => {
+  it('retorna apenas insumos e prioriza Trigo', () => {
+    const lista = [
+      { id: '1', nome: 'Manteiga', tipo: 'INSUMO',   saldoAtual: 10,  unidade: 'kg', estoqueMinimo: 5,   alerta: null },
+      { id: '2', nome: 'Trigo',    tipo: 'INSUMO',   saldoAtual: 50,  unidade: 'kg', estoqueMinimo: 100, alerta: 'vermelho' },
+      { id: '3', nome: 'Sal',      tipo: 'INSUMO',   saldoAtual: 5,   unidade: 'kg', estoqueMinimo: 2,   alerta: null },
+      { id: '4', nome: 'Bolo X',   tipo: 'PRODUTO',  saldoAtual: 100, unidade: 'un', estoqueMinimo: 10,  alerta: null },
+    ]
+    const r = calcularEstoqueInsumos(lista)
+    expect(r[0].nome).toBe('Trigo')
+    expect(r.find(i => i.nome === 'Bolo X')).toBeUndefined()
+    expect(r).toHaveLength(3)
+  })
+})
+
+// ── consolidarDashboard — novos campos ─────────────────────────────────────
+
+describe('consolidarDashboard — novos campos', () => {
+  it('não quebra com parâmetros opcionais vazios', () => {
+    const r = consolidarDashboard(resumoFin, itens, resumoComp, resumoVen, comprasMes, vendasMes, '2026-05-29T12:00:00.000Z', [], [])
+    expect(r.fluxoCaixa30d).toHaveLength(30)
+    expect(r.vendasPorProduto.quantidade).toEqual([])
+    expect(r.vendasPorProduto.valor).toEqual([])
+    expect(Array.isArray(r.estoqueInsumos)).toBe(true)
   })
 })

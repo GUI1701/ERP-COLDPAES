@@ -22,6 +22,14 @@ export interface DashboardResumo {
   }
   compras: { totalComprado: number; quantidadeCompras: number; mes: { total: number; quantidade: number } }
   vendas: { totalVendido: number; quantidadeVendas: number; mes: { total: number; quantidade: number } }
+  fluxoCaixa30d: Array<{ data: string; label: string; entradas: number; saidas: number; caixaProjetado: number }>
+  vendasPorProduto: {
+    quantidade: Array<{ nome: string; quantidade: number; unidade: string }>
+    valor: Array<{ nome: string; valor: number }>
+  }
+  estoqueInsumos: Array<{
+    id: string; nome: string; saldoAtual: number; unidade: string; estoqueMinimo: number; alerta: string | null
+  }>
 }
 
 export function useDashboard() {
