@@ -19,6 +19,7 @@ export default createRouter({
         { path: 'balanco', component: () => import('../views/BalancoView.vue') },
         { path: 'clientes', component: () => import('../views/ClientesView.vue') },
         { path: 'fornecedores', component: () => import('../views/FornecedoresView.vue') },
+        { path: 'assistente', component: () => import('../views/AssistenteView.vue') },
         { path: 'configuracoes', component: () => import('../views/ConfiguracoesView.vue') },
       ],
     },

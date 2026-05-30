@@ -30,6 +30,7 @@ const menu = [
   { path: '/relatorios', label: 'Relatórios' },
   { path: '/dre', label: 'DRE' },
   { path: '/balanco', label: 'Balanço Patrimonial' },
+  { path: '/assistente', label: 'Assistente' },
   { path: '/configuracoes', label: 'Configurações' },
 ]
 </script>
